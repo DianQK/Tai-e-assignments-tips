@@ -1,2 +1,5 @@
-include("A1")
-project(":A1").projectDir = file("A1/tai-e")
+val projects = arrayOf("A1", "A2")
+for (project in projects) {
+    include(project)
+    project(":$project").projectDir = file("$project/tai-e")
+}
