@@ -152,8 +152,8 @@ public class ConstantPropagation extends
             return value2;
         }
         // v1: NAC/Undef && v2: Constant
-        int value2Constant = value2.getConstant();
-        if (value2Constant == 0 && binaryExp instanceof ArithmeticExp arithmeticExp) { // v1: Any && v2: 0 -> Result: Undef(/%)/NAC
+        int constant2 = value2.getConstant();
+        if (constant2 == 0 && binaryExp instanceof ArithmeticExp arithmeticExp) { // v1: Any && v2: 0 -> Result: Undef(/%)/NAC
             return switch (arithmeticExp.getOperator()) {
                 case DIV, REM -> Value.getUndef();
                 default -> Value.getNAC();
@@ -165,36 +165,36 @@ public class ConstantPropagation extends
             return value1;
         }
         // v1: Constant && v2: Constant(!0)
-        int value1Constant = value1.getConstant();
+        int constant1 = value1.getConstant();
         if (binaryExp instanceof ArithmeticExp arithmeticExp) {
-            return switch (arithmeticExp.getOperator()) {
-                case ADD -> Value.makeConstant(value1Constant + value2Constant);
-                case DIV -> Value.makeConstant(value1Constant / value2Constant);
-                case REM -> Value.makeConstant(value1Constant % value2Constant);
-                case MUL -> Value.makeConstant(value1Constant * value2Constant);
-                case SUB -> Value.makeConstant(value1Constant - value2Constant);
-            };
+            return Value.makeConstant(switch (arithmeticExp.getOperator()) {
+                case ADD -> constant1 + constant2;
+                case DIV -> constant1 / constant2;
+                case REM -> constant1 % constant2;
+                case MUL -> constant1 * constant2;
+                case SUB -> constant1 - constant2;
+            });
         } else if (binaryExp instanceof ConditionExp conditionExp) {
-            return switch (conditionExp.getOperator()) {
-                case EQ -> Value.makeConstant(value1Constant == value2Constant ? 1 : 0);
-                case GE -> Value.makeConstant(value1Constant >= value2Constant ? 1 : 0);
-                case GT -> Value.makeConstant(value1Constant > value2Constant ? 1 : 0);
-                case LE -> Value.makeConstant(value1Constant <= value2Constant ? 1 : 0);
-                case LT -> Value.makeConstant(value1Constant < value2Constant ? 1 : 0);
-                case NE -> Value.makeConstant(value1Constant != value2Constant ? 1 : 0);
-            };
+            return Value.makeConstant(switch (conditionExp.getOperator()) {
+                case EQ -> constant1 == constant2;
+                case GE -> constant1 >= constant2;
+                case GT -> constant1 > constant2;
+                case LE -> constant1 <= constant2;
+                case LT -> constant1 < constant2;
+                case NE -> constant1 != constant2;
+            } ? 1 : 0);
         } else if (binaryExp instanceof ShiftExp shiftExp) {
-            return switch (shiftExp.getOperator()) {
-                case SHL -> Value.makeConstant(value1Constant << value2Constant);
-                case SHR -> Value.makeConstant(value1Constant >> value2Constant);
-                case USHR -> Value.makeConstant(value1Constant >>> value2Constant);
-            };
+            return Value.makeConstant(switch (shiftExp.getOperator()) {
+                case SHL -> constant1 << constant2;
+                case SHR -> constant1 >> constant2;
+                case USHR -> constant1 >>> constant2;
+            });
         } else if (binaryExp instanceof BitwiseExp bitwiseExp) {
-            return switch (bitwiseExp.getOperator()) {
-                case OR -> Value.makeConstant(value1Constant | value2Constant);
-                case AND -> Value.makeConstant(value1Constant & value2Constant);
-                case XOR -> Value.makeConstant(value1Constant ^ value2Constant);
-            };
+            return Value.makeConstant(switch (bitwiseExp.getOperator()) {
+                case OR -> constant1 | constant2;
+                case AND -> constant1 & constant2;
+                case XOR -> constant1 ^ constant2;
+            });
         } else {
             return Value.getNAC();
         }
