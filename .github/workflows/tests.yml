@@ -21,8 +21,7 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-    - name: Test A1 with Gradle
+    - name: Test with Gradle
       uses: gradle/gradle-build-action@v2
       with:
         arguments: test
-        build-root-directory: A1/tai-e
