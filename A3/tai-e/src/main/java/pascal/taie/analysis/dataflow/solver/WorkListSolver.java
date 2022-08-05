@@ -54,6 +54,18 @@ class WorkListSolver<Node, Fact> extends Solver<Node, Fact> {
 
     @Override
     protected void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
-        throw new UnsupportedOperationException();
+        Queue<Node> worklist = new ArrayDeque<>();
+        for (Node node : cfg) {
+            worklist.add(node);
+        }
+        while (!worklist.isEmpty()) {
+            Node node = worklist.poll();
+            for (Node succNode :  cfg.getSuccsOf(node)) {
+                this.analysis.meetInto(result.getInFact(succNode), result.getOutFact(node));
+            }
+            if (this.analysis.transferNode(node, result.getInFact(node), result.getOutFact(node))) {
+                worklist.addAll(cfg.getPredsOf(node));
+            }
+        }
     }
 }

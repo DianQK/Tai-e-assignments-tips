@@ -45,6 +45,8 @@ import pascal.taie.ir.stmt.If;
 import pascal.taie.ir.stmt.Stmt;
 import pascal.taie.ir.stmt.SwitchStmt;
 
+import java.util.Queue;
+import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -69,8 +71,68 @@ public class DeadCodeDetection extends MethodAnalysis {
                 ir.getResult(LiveVariableAnalysis.ID);
         // keep statements (dead code) sorted in the resulting set
         Set<Stmt> deadCode = new TreeSet<>(Comparator.comparing(Stmt::getIndex));
-        // TODO - finish me
         // Your task is to recognize dead code in ir and add it to deadCode
+        Set<Stmt> reachableCode = new TreeSet<>(Comparator.comparing(Stmt::getIndex));
+        reachableCode.add(cfg.getExit()); // Exit 一定可达鸭
+        Queue<Stmt> worklist = new ArrayDeque<>();
+        worklist.add(cfg.getEntry());
+        while (!worklist.isEmpty()) {
+            Stmt stmt = worklist.poll();
+            if (reachableCode.contains(stmt)) {
+                continue;
+            }
+            reachableCode.add(stmt);
+            Set<Edge<Stmt>> edges = cfg.getOutEdgesOf(stmt); // 控制流不可达代码根本不会在 OutEdges 中出现
+            if (stmt instanceof If ifStmt) { // if 语句会得到两个不同的边，edge target 也不同
+                Value value = ConstantPropagation.evaluate(ifStmt.getCondition(), constants.getInFact(stmt));
+                if (!value.isConstant()) {
+                    worklist.addAll(cfg.getSuccsOf(stmt));
+                    continue;
+                }
+                for (Edge<Stmt> edge : edges) {
+                    if ((edge.getKind() == Edge.Kind.IF_TRUE && value.getConstant() >= 1) || (edge.getKind() == Edge.Kind.IF_FALSE && value.getConstant() <= 0)) {
+                        worklist.add(edge.getTarget());
+                        break;
+                    }
+                }
+            } else if (stmt instanceof SwitchStmt switchStmt) {
+                Value value = constants.getResult(switchStmt).get(switchStmt.getVar());
+                if (!value.isConstant()) {
+                    worklist.addAll(cfg.getSuccsOf(stmt));
+                    continue;
+                }
+                int switchConstant = value.getConstant();
+                boolean matched = false;
+                for (Edge<Stmt> edge : edges) { // 也可以用 switchStmt.getCaseTargets ?
+                    if (edge.getKind() == Edge.Kind.SWITCH_CASE && edge.getCaseValue() == switchConstant) {
+                        worklist.add(edge.getTarget());
+                        matched = true;
+                        break; // case 1 {}; case 1 {}; 只匹配第一个
+                    }
+                }
+                if (!matched) {
+                    worklist.add(switchStmt.getDefaultTarget());
+                }
+            } else if (stmt instanceof AssignStmt assignStmt) {
+                worklist.addAll(cfg.getSuccsOf(stmt)); // 赋值语句不影响控制流
+                if (!hasNoSideEffect(assignStmt.getRValue())) {
+                    continue;
+                }
+                if (assignStmt.getLValue() instanceof Var var) {
+                    SetFact<Var> assignLiveVars = liveVars.getResult(stmt);
+                    if (!assignLiveVars.contains(var)) {
+                        reachableCode.remove(stmt); // 可能不是一个合适的处理
+                    }
+                }
+            } else {
+                worklist.addAll(cfg.getSuccsOf(stmt));
+            }
+        }
+        for (Stmt stmt : cfg) {
+            if (!reachableCode.contains(stmt)) {
+                deadCode.add(stmt);
+            }
+        }
         return deadCode;
     }
 
