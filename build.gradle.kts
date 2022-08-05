@@ -27,6 +27,10 @@ submit("A4") {
     add("InterSolver.java")
 }
 
+submit("A5") {
+    add("Solver.java")
+}
+
 fun submit(name: String, setSubmittedFilenames: ArrayList<String>.() -> Unit) {
     // https://docs.gradle.org/current/userguide/tutorial_using_tasks.html
     tasks.register("submit$name") {
