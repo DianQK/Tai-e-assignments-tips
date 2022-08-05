@@ -31,6 +31,16 @@ submit("A5") {
     add("Solver.java")
 }
 
+submit("A6") {
+    add("Solver.java")
+    add("_1CallSelector.java")
+    add("_1ObjSelector.java")
+    add("_1TypeSelector.java")
+    add("_2CallSelector.java")
+    add("_2ObjSelector.java")
+    add("_2TypeSelector.java")
+}
+
 fun submit(name: String, setSubmittedFilenames: ArrayList<String>.() -> Unit) {
     // https://docs.gradle.org/current/userguide/tutorial_using_tasks.html
     tasks.register("submit$name") {
