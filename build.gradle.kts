@@ -21,6 +21,12 @@ submit("A3") {
     add("DeadCodeDetection.java")
 }
 
+submit("A4") {
+    add("CHABuilder.java")
+    add("InterConstantPropagation.java")
+    add("InterSolver.java")
+}
+
 fun submit(name: String, setSubmittedFilenames: ArrayList<String>.() -> Unit) {
     // https://docs.gradle.org/current/userguide/tutorial_using_tasks.html
     tasks.register("submit$name") {
